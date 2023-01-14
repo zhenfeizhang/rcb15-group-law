@@ -1,58 +1,49 @@
-use halo2curves::bn256::Fq;
-use halo2curves::bn256::Fr;
-use halo2curves::bn256::G1Affine;
-use halo2curves::bn256::G1;
-use halo2curves::group::ff::Field;
-use halo2curves::group::ff::PrimeField;
-use halo2curves::CurveExt;
+use ark_ec::short_weierstrass_jacobian::GroupAffine;
+use ark_ec::{short_weierstrass_jacobian::GroupProjective, SWModelParameters};
+use ark_ff::PrimeField;
+use ark_ff::Zero;
 
-pub fn add(p1: &G1, p2: &G1) -> G1 {
-    let x1 = p1.x;
-    let y1 = p1.y;
-    let z1 = p1.z;
-    let x2 = p2.x;
-    let y2 = p2.y;
-    let z2 = p2.z;
-
-    let b3 = Fq::from(3) * G1::b();
-
-    let (x3, y3, z3) = core_add(x1, y1, z1, x2, y2, z2, b3);
-
-    G1 {
-        x: x3,
-        y: y3,
-        z: z3,
-    }
+pub fn homogeneous_form_to_affine<P: SWModelParameters>(x: &GroupProjective<P>) -> GroupAffine<P> {
+    GroupAffine::<P>::new(x.x / x.z, x.y / x.z, false)
 }
 
-pub fn double(p: &G1) -> G1 {
-    let x1 = p.x;
-    let y1 = p.y;
-    let z1 = p.z;
+pub fn add<P: SWModelParameters>(
+    p1: &GroupProjective<P>,
+    p2: &GroupProjective<P>,
+) -> GroupProjective<P> {
+    let b3 = P::BaseField::from(3u64) * P::COEFF_B;
+    let (x3, y3, z3) = core_add::<P>(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, b3);
+    let mut res = GroupProjective::<P>::zero();
+    res.x = x3;
+    res.y = y3;
+    res.z = z3;
 
-    let b3 = Fq::from(3) * G1::b();
-
-    let (x3, y3, z3) = core_double(x1, y1, z1, b3);
-
-    G1 {
-        x: x3,
-        y: y3,
-        z: z3,
-    }
+    res
 }
 
-pub fn mul(base: &G1, scalar: &Fr) -> G1 {
+pub fn double<P: SWModelParameters>(p: &GroupProjective<P>) -> GroupProjective<P> {
+    let b3 = P::BaseField::from(3u64) * P::COEFF_B;
+    let (x3, y3, z3) = core_double::<P>(p.x, p.y, p.z, b3);
+
+    let mut res = GroupProjective::<P>::zero();
+    res.x = x3;
+    res.y = y3;
+    res.z = z3;
+
+    res
+}
+
+/// Naive double-then-add method for group multiplications.
+pub fn mul<P: SWModelParameters>(
+    base: &GroupProjective<P>,
+    scalar: &P::ScalarField,
+) -> GroupProjective<P> {
     let mut res = None;
-    for b in scalar
-        .to_repr()
-        .iter()
-        .rev()
-        .flat_map(|byte| (0..8).rev().map(move |i| (byte >> i) & 1u8))
-    {
+    for b in ark_ff::BitIteratorBE::without_leading_zeros(scalar.into_repr()) {
         if res.is_some() {
             res = Some(double(&res.unwrap()));
         }
-        if b == 1 {
+        if b {
             if res.is_some() {
                 res = Some(add(&res.unwrap(), base));
             } else {
@@ -63,16 +54,11 @@ pub fn mul(base: &G1, scalar: &Fr) -> G1 {
     res.unwrap()
 }
 
-pub fn homogeneous_form_to_affine(x: &G1) -> G1Affine {
-    let z = x.z.invert().unwrap();
-
-    G1Affine {
-        x: x.x * z,
-        y: x.y * z,
-    }
-}
-
-pub fn naive_msm(points: &[G1], scalars: &[Fr]) -> G1 {
+/// Naive msm that does the sum of product without any optimizations.
+pub fn naive_msm<P: SWModelParameters>(
+    points: &[GroupProjective<P>],
+    scalars: &[P::ScalarField],
+) -> GroupProjective<P> {
     let mut res = mul(&points[0], &scalars[0]);
     for (p, s) in points.iter().zip(scalars.iter()).skip(1) {
         let tmp = mul(p, s);
@@ -81,9 +67,15 @@ pub fn naive_msm(points: &[G1], scalars: &[Fr]) -> G1 {
     res
 }
 
-fn core_add(x1: Fq, y1: Fq, z1: Fq, x2: Fq, y2: Fq, z2: Fq, b3: Fq) -> (Fq, Fq, Fq) {
-    // Algorithm 7 of eprint:2015-1060
-    // Source code from A.3
+fn core_add<P: SWModelParameters>(
+    x1: P::BaseField,
+    y1: P::BaseField,
+    z1: P::BaseField,
+    x2: P::BaseField,
+    y2: P::BaseField,
+    z2: P::BaseField,
+    b3: P::BaseField,
+) -> (P::BaseField, P::BaseField, P::BaseField) {
     let t0 = x1 * x2; // mul #1
     let t1 = y1 * y2; // mul #2
     let t2 = z1 * z2; // mul #3
@@ -131,16 +123,15 @@ fn core_add(x1: Fq, y1: Fq, z1: Fq, x2: Fq, y2: Fq, z2: Fq, b3: Fq) -> (Fq, Fq, 
     let z3 = z3 * t4; // mul #12
     let z3 = z3 + t0;
 
-    // {
-    //     println!("x, y, z in add {:?} {:?} {:?}", x3, y3, z3);
-    //     let on_curve = y3 * y3 * z3 - x3 * x3 * x3 - Fq::from(3u64) *z3 * z3 *z3;
-    //     println!("on curve: {:?}", on_curve);
-    // }
-
     (x3, y3, z3)
 }
 
-fn core_double(x: Fq, y: Fq, z: Fq, b3: Fq) -> (Fq, Fq, Fq) {
+fn core_double<P: SWModelParameters>(
+    x: P::BaseField,
+    y: P::BaseField,
+    z: P::BaseField,
+    b3: P::BaseField,
+) -> (P::BaseField, P::BaseField, P::BaseField) {
     // Algorithm 7 of eprint:2015-1060
     // Source code from A.3
     let t0 = y * y;
@@ -167,10 +158,5 @@ fn core_double(x: Fq, y: Fq, z: Fq, b3: Fq) -> (Fq, Fq, Fq) {
     let x3 = t0 * t1;
     let x3 = x3 + x3;
 
-    // {
-    //     println!("x, y, z in double {:?} {:?} {:?}", x3, y3, z3);
-    //     let on_curve = y3 * y3 * z3 - x3 * x3 * x3 - Fq::from(3u64) *z3 * z3 *z3;
-    //     println!("on curve: {:?}\n", on_curve);
-    // }
     (x3, y3, z3)
 }
