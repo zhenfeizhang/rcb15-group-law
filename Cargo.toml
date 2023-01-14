@@ -1,6 +1,8 @@
 [package]
-name = "sw-new-formula"
+name = "swcurve-rcb15"
+description = "Implement group law for SW curves in RCB15 paper"
 version = "0.1.0"
+authors = [ "Zhenfei Zhang <zhenfei.zhang@hotmail.com>" ]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
