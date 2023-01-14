@@ -1,50 +1,33 @@
-use halo2curves::bn256::Fq;
-use halo2curves::bn256::Fr;
-use halo2curves::bn256::G1Affine;
-use halo2curves::bn256::G1;
 use halo2curves::group::ff::Field;
 use halo2curves::group::ff::PrimeField;
 use halo2curves::CurveExt;
 
-pub fn add(p1: &G1, p2: &G1) -> G1 {
-    let x1 = p1.x;
-    let y1 = p1.y;
-    let z1 = p1.z;
-    let x2 = p2.x;
-    let y2 = p2.y;
-    let z2 = p2.z;
+pub fn add<C: CurveExt>(p1: &C, p2: &C) -> C {
+    let b3 = C::Base::from(3) * C::b();
+    let (x1, y1, z1) = p1.jacobian_coordinates();
+    let (x2, y2, z2) = p2.jacobian_coordinates();
+    let (x3, y3, z3) = core_add::<C>(x1, y1, z1, x2, y2, z2, b3);
 
-    let b3 = Fq::from(3) * G1::b();
-
-    let (x3, y3, z3) = core_add(x1, y1, z1, x2, y2, z2, b3);
-
-    G1 {
-        x: x3,
-        y: y3,
-        z: z3,
-    }
+    // we need to path halo2curve in order to skip this step
+    let (x3, y3, z3) = homogeneous_to_jacobian::<C>(x3, y3, z3);
+    C::new_jacobian(x3, y3, z3).unwrap()
 }
 
-pub fn double(p: &G1) -> G1 {
-    let x1 = p.x;
-    let y1 = p.y;
-    let z1 = p.z;
-
-    let b3 = Fq::from(3) * G1::b();
-
-    let (x3, y3, z3) = core_double(x1, y1, z1, b3);
-
-    G1 {
-        x: x3,
-        y: y3,
-        z: z3,
-    }
+pub fn double<C: CurveExt>(p: &C) -> C {
+    let b3 = C::Base::from(3) * C::b();
+    let (x1, y1, z1) = p.jacobian_coordinates();
+    let (x3, y3, z3) = core_double::<C>(x1, y1, z1, b3);
+    
+    // we need to path halo2curve in order to skip this step
+    let (x3, y3, z3) = homogeneous_to_jacobian::<C>(x3, y3, z3);
+    C::new_jacobian(x3, y3, z3).unwrap()
 }
 
-pub fn mul(base: &G1, scalar: &Fr) -> G1 {
+pub fn mul<C: CurveExt>(base: &C, scalar: &C::ScalarExt) -> C {
     let mut res = None;
     for b in scalar
         .to_repr()
+        .as_ref()
         .iter()
         .rev()
         .flat_map(|byte| (0..8).rev().map(move |i| (byte >> i) & 1u8))
@@ -63,16 +46,25 @@ pub fn mul(base: &G1, scalar: &Fr) -> G1 {
     res.unwrap()
 }
 
-pub fn homogeneous_form_to_affine(x: &G1) -> G1Affine {
-    let z = x.z.invert().unwrap();
-
-    G1Affine {
-        x: x.x * z,
-        y: x.y * z,
-    }
+#[inline]
+pub fn homogeneous_to_jacobian<C: CurveExt>(
+    x: C::Base,
+    y: C::Base,
+    z: C::Base,
+) -> (C::Base, C::Base, C::Base) {
+    let z = z.invert().unwrap();
+    (x * z, y * z, C::Base::one())
 }
 
-pub fn naive_msm(points: &[G1], scalars: &[Fr]) -> G1 {
+pub fn homogeneous_form_to_affine<C: CurveExt>(p: &C) -> C::Affine {
+    let (x, y, z) = p.jacobian_coordinates();
+    let z = z.invert().unwrap();
+    C::new_jacobian(x * z, y * z, C::Base::one())
+        .unwrap()
+        .to_affine()
+}
+
+pub fn naive_msm<C: CurveExt>(points: &[C], scalars: &[C::ScalarExt]) -> C {
     let mut res = mul(&points[0], &scalars[0]);
     for (p, s) in points.iter().zip(scalars.iter()).skip(1) {
         let tmp = mul(p, s);
@@ -81,7 +73,15 @@ pub fn naive_msm(points: &[G1], scalars: &[Fr]) -> G1 {
     res
 }
 
-fn core_add(x1: Fq, y1: Fq, z1: Fq, x2: Fq, y2: Fq, z2: Fq, b3: Fq) -> (Fq, Fq, Fq) {
+fn core_add<C: CurveExt>(
+    x1: C::Base,
+    y1: C::Base,
+    z1: C::Base,
+    x2: C::Base,
+    y2: C::Base,
+    z2: C::Base,
+    b3: C::Base,
+) -> (C::Base, C::Base, C::Base) {
     // Algorithm 7 of eprint:2015-1060
     // Source code from A.3
     let t0 = x1 * x2; // mul #1
@@ -140,7 +140,12 @@ fn core_add(x1: Fq, y1: Fq, z1: Fq, x2: Fq, y2: Fq, z2: Fq, b3: Fq) -> (Fq, Fq, 
     (x3, y3, z3)
 }
 
-fn core_double(x: Fq, y: Fq, z: Fq, b3: Fq) -> (Fq, Fq, Fq) {
+fn core_double<C: CurveExt>(
+    x: C::Base,
+    y: C::Base,
+    z: C::Base,
+    b3: C::Base,
+) -> (C::Base, C::Base, C::Base) {
     // Algorithm 7 of eprint:2015-1060
     // Source code from A.3
     let t0 = y * y;

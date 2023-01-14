@@ -2,7 +2,7 @@
 // mod ark_bls12_381;
 mod ark_bn254;
 mod halo2_bn254;
-
+mod halo2_pallas;
 
 #[macro_export]
 macro_rules! impl_ark_rcb15_tests {
