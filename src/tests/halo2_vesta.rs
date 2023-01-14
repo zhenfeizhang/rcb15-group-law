@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 use ark_std::test_rng;
 use halo2curves::pasta::vesta::Point;
 use halo2curves::pasta::vesta::Scalar;
@@ -6,10 +8,11 @@ use halo2curves::group::ff::PrimeField;
 use halo2curves::group::{Curve, Group};
 use halo2curves::CurveAffine;
 
-use crate::halo2bn254::add;
-use crate::halo2bn254::double;
-use crate::halo2bn254::homogeneous_form_to_affine;
-use crate::halo2bn254::naive_msm;
+use crate::halo2::add;
+use crate::halo2::double;
+use crate::halo2::homogeneous_form_to_affine;
+use crate::halo2::mul;
+use crate::halo2::naive_msm;
 
 const REPEAT: usize = 5;
 #[test]
@@ -59,6 +62,27 @@ fn test_double() {
 }
 
 #[test]
+fn test_mul() {
+    let mut rng = test_rng();
+
+    for _ in 0..REPEAT {
+        let base = Point::random(&mut rng);
+        let scalar = Scalar::random(&mut rng);
+
+        let res = mul(&base, &scalar);
+        let res2 = base.mul(scalar);
+
+        #[cfg(debug_assertions)]
+        {
+            println!("halo2: {:?}", res2.to_affine());
+            println!("rcb15 double: {:?}", homogeneous_form_to_affine(&res));
+        }
+
+        assert_eq!(res2.to_affine(), homogeneous_form_to_affine(&res));
+    }
+}
+
+#[test]
 fn test_msm() {
     let mut rng = test_rng();
 
@@ -74,7 +98,7 @@ fn test_msm() {
 
         #[cfg(debug_assertions)]
         {
-            println!("arkworks: {:?}", res2.to_affine());
+            println!("halo2: {:?}", res2.to_affine());
             println!("rcb15 double: {:?}", homogeneous_form_to_affine(&res));
         }
 

@@ -1,5 +1,5 @@
 pub mod arkworks;
-pub mod halo2bn254;
+pub mod halo2;
 
 #[cfg(test)]
 mod tests;
