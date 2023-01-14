@@ -7,6 +7,7 @@ use crate::impl_ark_rcb15_tests;
 use ark_bn254::g1::Parameters;
 use ark_ec::msm::VariableBaseMSM;
 use ark_ec::short_weierstrass_jacobian::GroupProjective;
+use ark_ec::AffineCurve;
 use ark_ec::ModelParameters;
 use ark_ec::ProjectiveCurve;
 use ark_ff::PrimeField;

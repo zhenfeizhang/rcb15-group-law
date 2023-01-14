@@ -1,4 +1,4 @@
-// mod ark_bls12_377;
+mod ark_bls12_377;
 mod ark_bls12_381;
 mod ark_bn254;
 mod halo2_bn254;
@@ -13,8 +13,12 @@ macro_rules! impl_ark_rcb15_tests {
 
             // random additions
             for _ in 0..REPEAT {
-                let x = GroupProjective::<$proj>::rand(&mut rng);
-                let y = GroupProjective::<$proj>::rand(&mut rng);
+                let x = GroupProjective::<$proj>::rand(&mut rng)
+                    .into_affine()
+                    .into_projective();
+                let y = GroupProjective::<$proj>::rand(&mut rng)
+                    .into_affine()
+                    .into_projective();
 
                 // test additions
                 let z = x + y;
@@ -50,7 +54,9 @@ macro_rules! impl_ark_rcb15_tests {
             let mut rng = test_rng();
 
             for _ in 0..REPEAT {
-                let x = GroupProjective::<$proj>::rand(&mut rng);
+                let x = GroupProjective::<$proj>::rand(&mut rng)
+                    .into_affine()
+                    .into_projective();
                 let res = double(&x);
                 // test doubling via addition formula
                 let res2 = add(&x, &x);
@@ -74,7 +80,9 @@ macro_rules! impl_ark_rcb15_tests {
             let mut rng = test_rng();
 
             for _ in 0..REPEAT {
-                let base = GroupProjective::<$proj>::rand(&mut rng);
+                let base = GroupProjective::<$proj>::rand(&mut rng)
+                    .into_affine()
+                    .into_projective();
                 let scalar = <$proj as ModelParameters>::ScalarField::rand(&mut rng);
 
                 let res = mul(&base, &scalar);
@@ -96,10 +104,10 @@ macro_rules! impl_ark_rcb15_tests {
 
             for i in 1..REPEAT {
                 let dim = 1 << i;
-                let bases: Vec<_> = (0..dim)
-                    .map(|_| GroupProjective::<$proj>::rand(&mut rng))
+                let bases_affine: Vec<_> = (0..dim)
+                    .map(|_| GroupProjective::<$proj>::rand(&mut rng).into_affine())
                     .collect();
-                let bases_affine: Vec<_> = bases.iter().map(|x| x.into_affine()).collect();
+                let bases: Vec<_> = bases_affine.iter().map(|x| x.into_projective()).collect();
                 let scalars: Vec<_> = (0..dim)
                     .map(|_| <$proj as ModelParameters>::ScalarField::rand(&mut rng))
                     .collect();
