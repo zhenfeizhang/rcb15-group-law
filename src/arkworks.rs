@@ -1,7 +1,6 @@
 use ark_ec::short_weierstrass_jacobian::GroupAffine;
 use ark_ec::{short_weierstrass_jacobian::GroupProjective, SWModelParameters};
 use ark_ff::PrimeField;
-use ark_ff::Zero;
 
 pub fn homogeneous_form_to_affine<P: SWModelParameters>(x: &GroupProjective<P>) -> GroupAffine<P> {
     GroupAffine::<P>::new(x.x / x.z, x.y / x.z, false)
@@ -13,24 +12,15 @@ pub fn add<P: SWModelParameters>(
 ) -> GroupProjective<P> {
     let b3 = P::BaseField::from(3u64) * P::COEFF_B;
     let (x3, y3, z3) = core_add::<P>(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, b3);
-    let mut res = GroupProjective::<P>::zero();
-    res.x = x3;
-    res.y = y3;
-    res.z = z3;
 
-    res
+    GroupProjective::<P>::new(x3, y3, z3)
 }
 
 pub fn double<P: SWModelParameters>(p: &GroupProjective<P>) -> GroupProjective<P> {
     let b3 = P::BaseField::from(3u64) * P::COEFF_B;
     let (x3, y3, z3) = core_double::<P>(p.x, p.y, p.z, b3);
 
-    let mut res = GroupProjective::<P>::zero();
-    res.x = x3;
-    res.y = y3;
-    res.z = z3;
-
-    res
+    GroupProjective::<P>::new(x3, y3, z3)
 }
 
 /// Naive double-then-add method for group multiplications.

@@ -17,7 +17,7 @@ pub fn double<C: CurveExt>(p: &C) -> C {
     let b3 = C::Base::from(3) * C::b();
     let (x1, y1, z1) = p.jacobian_coordinates();
     let (x3, y3, z3) = core_double::<C>(x1, y1, z1, b3);
-    
+
     // we need to path halo2curve in order to skip this step
     let (x3, y3, z3) = homogeneous_to_jacobian::<C>(x3, y3, z3);
     C::new_jacobian(x3, y3, z3).unwrap()

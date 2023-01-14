@@ -1,9 +1,9 @@
 use ark_std::test_rng;
-use halo2curves::pasta::pallas::Point;
-use halo2curves::pasta::pallas::Scalar;
 use halo2curves::group::ff::Field;
 use halo2curves::group::ff::PrimeField;
 use halo2curves::group::{Curve, Group};
+use halo2curves::pasta::pallas::Point;
+use halo2curves::pasta::pallas::Scalar;
 use halo2curves::CurveAffine;
 
 use crate::halo2bn254::add;

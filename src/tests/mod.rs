@@ -1,5 +1,5 @@
 // mod ark_bls12_377;
-// mod ark_bls12_381;
+mod ark_bls12_381;
 mod ark_bn254;
 mod halo2_bn254;
 mod halo2_pallas;
@@ -19,6 +19,13 @@ macro_rules! impl_ark_rcb15_tests {
                 // test additions
                 let z = x + y;
                 let res = add::<$proj>(&x, &y);
+
+                println!(
+                    "{}",
+                    res.y * res.y * res.z
+                        - res.x * res.x * res.x
+                        - <$proj as ModelParameters>::BaseField::from(3u64) * res.z * res.z * res.z
+                );
 
                 let res_affine = homogeneous_form_to_affine(&res);
                 assert!(res_affine.is_on_curve());

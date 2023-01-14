@@ -4,7 +4,7 @@ use crate::arkworks::homogeneous_form_to_affine;
 use crate::arkworks::mul;
 use crate::arkworks::naive_msm;
 use crate::impl_ark_rcb15_tests;
-use ark_bls12_377::g1::Parameters;
+use ark_bls12_381::g1::Parameters;
 use ark_ec::msm::VariableBaseMSM;
 use ark_ec::short_weierstrass_jacobian::GroupProjective;
 use ark_ec::ModelParameters;
