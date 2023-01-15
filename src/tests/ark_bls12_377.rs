@@ -7,11 +7,12 @@ use crate::impl_ark_rcb15_tests;
 use ark_bls12_377::g1::Parameters;
 use ark_ec::msm::VariableBaseMSM;
 use ark_ec::short_weierstrass_jacobian::GroupProjective;
+use ark_ec::AffineCurve;
 use ark_ec::ModelParameters;
 use ark_ec::ProjectiveCurve;
 use ark_ff::PrimeField;
 use ark_std::test_rng;
-use ark_std::UniformRand;use ark_ec::AffineCurve;
+use ark_std::UniformRand;
 
 const REPEAT: usize = 5;
 

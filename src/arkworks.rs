@@ -66,54 +66,55 @@ fn core_add<P: SWModelParameters>(
     z2: P::BaseField,
     b3: P::BaseField,
 ) -> (P::BaseField, P::BaseField, P::BaseField) {
-    let t0 = x1 * x2; // mul #1
-    let t1 = y1 * y2; // mul #2
-    let t2 = z1 * z2; // mul #3
+    // Algorithm 7 of eprint:2015-1060
+    // Source code from A.3
+    let t0_1 = x1 * x2; // mul #1
+    let t1_2 = y1 * y2; // mul #2
+    let t2_3 = z1 * z2; // mul #3
 
-    let t3 = x1 + y1;
-    let t4 = x2 + y2;
-    let t3 = t3 * t4; // mul #4
+    let t3_4 = x1 + y1;
+    let t4_5 = x2 + y2;
+    let t3_6 = t3_4 * t4_5; // mul #4
 
-    let t4 = t0 + t1;
-    let t3 = t3 - t4;
-    let t4 = y1 + z1;
+    let t4_7 = t0_1 + t1_2;
+    let t3_8 = t3_6 - t4_7;
+    let t4_9 = y1 + z1;
 
-    let x3 = y2 + z2;
-    let t4 = t4 * x3; // mul #5
-    let x3 = t1 + t2;
+    let x3_10 = y2 + z2;
+    let t4_11 = t4_9 * x3_10; // mul #5
+    let x3_12 = t1_2 + t2_3;
 
-    let t4 = t4 - x3;
-    let x3 = x1 + z1;
-    let y3 = x2 + z2;
+    let t4_13 = t4_11 - x3_12;
+    let x3_14 = x1 + z1;
+    let y3_15 = x2 + z2;
 
-    let x3 = x3 * y3; // mul #6
-    let y3 = t0 + t2;
-    let y3 = x3 - y3;
+    let x3_16 = x3_14 * y3_15; // mul #6
+    let y3_17 = t0_1 + t2_3;
+    let y3_18 = x3_16 - y3_17;
 
-    let x3 = t0 + t0;
-    let t0 = x3 + t0;
+    let x3_19 = t0_1 + t0_1;
+    let t0_20 = x3_19 + t0_1;
     // b3 is a constant -- so this multiplication is cheap
-    let t2 = b3 * t2;
+    let t2_21 = b3 * t2_3;
 
-    let z3 = t1 + t2;
-    let t1 = t1 - t2;
-
+    let z3_22 = t1_2 + t2_21;
+    let t1_23 = t1_2 - t2_21;
     // b3 is a constant -- so this multiplication is cheap
-    let y3 = b3 * y3;
+    let y3_24 = b3 * y3_18;
 
-    let x3 = t4 * y3; // mul #7
-    let t2 = t3 * t1; // mul #8
-    let x3 = t2 - x3;
+    let x3_25 = t4_13 * y3_24; // mul #7
+    let t2_26 = t3_8 * t1_23; // mul #8
+    let x3_27 = t2_26 - x3_25;
 
-    let y3 = y3 * t0; // mul #9
-    let t1 = t1 * z3; // mul #10
-    let y3 = t1 + y3;
+    let y3_28 = y3_24 * t0_20; // mul #9
+    let t1_29 = t1_23 * z3_22; // mul #10
+    let y3_30 = t1_29 + y3_28;
 
-    let t0 = t0 * t3; // mul #11
-    let z3 = z3 * t4; // mul #12
-    let z3 = z3 + t0;
+    let t0_31 = t0_20 * t3_8; // mul #11
+    let z3_32 = z3_22 * t4_13; // mul #12
+    let z3_33 = z3_32 + t0_31;
 
-    (x3, y3, z3)
+    (x3_27, y3_30, z3_33)
 }
 
 fn core_double<P: SWModelParameters>(
@@ -124,29 +125,29 @@ fn core_double<P: SWModelParameters>(
 ) -> (P::BaseField, P::BaseField, P::BaseField) {
     // Algorithm 7 of eprint:2015-1060
     // Source code from A.3
-    let t0 = y * y;
-    let z3 = t0 + t0;
-    let z3 = z3 + z3;
+    let t0_1 = y * y;
+    let z3_2 = t0_1 + t0_1;
+    let z3_3 = z3_2 + z3_2;
 
-    let z3 = z3 + z3;
-    let t1 = y * z;
-    let t2 = z * z;
+    let z3_4 = z3_3 + z3_3;
+    let t1_5 = y * z;
+    let t2_6 = z * z;
 
-    let t2 = b3 * t2;
-    let x3 = t2 * z3;
-    let y3 = t0 + t2;
+    let t2_7 = b3 * t2_6;
+    let x3_8 = t2_7 * z3_4;
+    let y3_9 = t0_1 + t2_7;
 
-    let z3 = t1 * z3;
-    let t1 = t2 + t2;
-    let t2 = t1 + t2;
+    let z3_10 = t1_5 * z3_4;
+    let t1_11 = t2_7 + t2_7;
+    let t2_12 = t1_11 + t2_7;
 
-    let t0 = t0 - t2;
-    let y3 = t0 * y3;
-    let y3 = x3 + y3;
+    let t0_13 = t0_1 - t2_12;
+    let y3_14 = t0_13 * y3_9;
+    let y3_15 = x3_8 + y3_14;
 
-    let t1 = x * y;
-    let x3 = t0 * t1;
-    let x3 = x3 + x3;
+    let t1_16 = x * y;
+    let x3_17 = t0_13 * t1_16;
+    let x3_18 = x3_17 + x3_17;
 
-    (x3, y3, z3)
+    (x3_18, y3_15, z3_10)
 }

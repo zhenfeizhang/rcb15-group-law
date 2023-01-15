@@ -1,11 +1,11 @@
 use std::ops::Mul;
 
 use ark_std::test_rng;
-use halo2curves::pasta::vesta::Point;
-use halo2curves::pasta::vesta::Scalar;
 use halo2curves::group::ff::Field;
 use halo2curves::group::ff::PrimeField;
 use halo2curves::group::{Curve, Group};
+use halo2curves::pasta::vesta::Point;
+use halo2curves::pasta::vesta::Scalar;
 use halo2curves::CurveAffine;
 
 use crate::halo2::add;
