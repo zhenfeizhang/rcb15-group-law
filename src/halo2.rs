@@ -53,13 +53,13 @@ pub fn homogeneous_to_jacobian<C: CurveExt>(
     z: C::Base,
 ) -> (C::Base, C::Base, C::Base) {
     let z = z.invert().unwrap();
-    (x * z, y * z, C::Base::one())
+    (x * z, y * z, C::Base::from_u128(1))
 }
 
 pub fn homogeneous_form_to_affine<C: CurveExt>(p: &C) -> C::Affine {
     let (x, y, z) = p.jacobian_coordinates();
     let z = z.invert().unwrap();
-    C::new_jacobian(x * z, y * z, C::Base::one())
+    C::new_jacobian(x * z, y * z, C::Base::from_u128(1))
         .unwrap()
         .to_affine()
 }
